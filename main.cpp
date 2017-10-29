@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-int main(void) {
+int main() {
     std::cout << "Hello from PFDCalculator!" << std::endl;
     return 0;
 }
