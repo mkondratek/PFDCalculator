@@ -2,9 +2,13 @@
 // Created by mkondratek on 29.10.17.
 //
 
-#include <iostream>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
-int main() {
-    std::cout << "Hello from PFDCalculator!" << std::endl;
-    return 0;
+//todo parser for coeffs
+
+int main(int argc, char* argv[]) {
+    testing::InitGoogleTest(&argc, argv);
+
+    return RUN_ALL_TESTS();
 }
