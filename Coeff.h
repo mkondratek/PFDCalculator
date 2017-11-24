@@ -20,6 +20,10 @@ template<typename Number>
 Coeff<Number> operator+(Coeff<Number> const &a, Coeff<Number> const &b);
 template<typename Number>
 Coeff<Number> operator-(Coeff<Number> const &a, Coeff<Number> const &b);
+//template<typename Number>
+//Coeff<Number> operator*(Coeff<Number> const &a, Coeff<Number> const &b);
+//template<typename Number>
+//Coeff<Number> operator/(Coeff<Number> const &a, Coeff<Number> const &b);
 
 /**  declaration end  **/
 
@@ -56,11 +60,11 @@ public:
 
     Coeff<Number>(String const &variable, SetOfC const &coeffs) noexcept;
 
-    Coeff<Number>(Number const &multiplier) noexcept;
+    explicit Coeff<Number>(Number const &multiplier) noexcept;
 
-    Coeff<Number>(String const &variable) noexcept;
+    explicit Coeff<Number>(String const &variable) noexcept;
 
-    Coeff<Number>(SetOfC const &coeffs) noexcept;
+    explicit Coeff<Number>(SetOfC const &coeffs) noexcept;
 
     Coeff<Number>() noexcept;
 
@@ -76,19 +80,19 @@ public:
 
     friend Coeff<Number> operator-<Number>(Coeff<Number> const &a, Coeff<Number> const &b);
 
-    template<typename N>
-    friend Coeff<N> operator*(Coeff<N> const &a, Coeff<N> const &b);
+//    template<typename N>
+//    friend Coeff<N> operator*(Coeff<N> const &a, Coeff<N> const &b);
 
-    template<typename N>
-    friend Coeff<N> operator/(Coeff<N> const &a, Coeff<N> const &b);
+//    template<typename N>
+//    friend Coeff<N> operator/(Coeff<N> const &a, Coeff<N> const &b);
 
     Coeff<Number> &operator+=(Coeff<Number> const &a);
 
     Coeff<Number> &operator-=(Coeff<Number> const &a);
 
-    Coeff<Number> &operator*=(Coeff<Number> const &a);
+//    Coeff<Number> &operator*=(Coeff<Number> const &a);
 
-    Coeff<Number> &operator/=(Coeff<Number> const &a);
+//    Coeff<Number> &operator/=(Coeff<Number> const &a);
 
     Coeff<Number> operator+();
 
@@ -167,6 +171,16 @@ Coeff<Number> operator-(Coeff<Number> const &a, Coeff<Number> const &b) {
     Coeff<Number> tmp(b);
     tmp.m_multiplier *= Number(-1);
     return a + tmp;
+}
+
+template<typename Number>
+Coeff<Number> operator*(Coeff<Number> const &a, Coeff<Number> const &b) {
+    return Coeff<Number>();
+}
+
+template<typename Number>
+Coeff<Number> operator/(const Coeff<Number> &a, const Coeff<Number> &b) {
+    return Coeff<Number>();
 }
 
 template<typename Number>

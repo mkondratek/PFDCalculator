@@ -60,12 +60,6 @@ Coeff<Number> &Coeff<Number>::addCoeff(Coeff<Number> const &coeff) {
     return *this;
 }
 
-//template<typename Number>
-//Coeff<Number> &Coeff::pull(Number num) {
-//    //todo
-//    return <#initializer#>;
-//}
-
 template<typename Number>
 Coeff<Number>::Coeff(const Number &multiplier,
                      const Coeff::String &variable,
@@ -166,6 +160,55 @@ Coeff<Number> &Coeff<Number>::putIn(Number num) {
     return *this;
 }
 
+template <typename Number>
+Coeff<Number> &Coeff::operator+=(Coeff<Number> const &a) {
+    *this = *this + a;
+    return *this;
+}
+
+template <typename Number>
+Coeff<Number> &Coeff::operator-=(Coeff<Number> const &a) {
+    *this = *this - a;
+    return *this;
+}
+
+//template <typename Number>
+//Coeff<Number> &Coeff::operator*=(Coeff<Number> const &a) {
+//    return <#initializer#>;
+//}
+
+//template <typename Number>
+//Coeff<Number> &Coeff::operator/=(const Coeff<Number> &a) {
+//    return <#initializer#>;
+//}
+
+template <typename Number>
+Coeff<Number> Coeff::operator+() {
+    return Coeff<Number>(*this);
+}
+
+template <typename Number>
+Coeff<Number> Coeff::operator-() {
+    Coeff<Number> negated(*this);
+    negated.m_multiplier *= Number(-1);
+    return negated;
+}
+
+template <typename Number>
+Coeff<Number> &Coeff::apply(Coeff::String variable, Number value) {
+    return <#initializer#>;
+}
+
+template <typename Number>
+Coeff<Number> &Coeff::apply(std::map<Coeff::String, Number> values) {
+    return <#initializer#>;
+}
+
+template <typename Number>
+Coeff<Number> &Coeff::calculate(std::map<Coeff::String, Number> values) const {
+    return <#initializer#>;
+}
+
 template<typename Number>
 Number Coeff<Number>::getMultiplier() const {
     return m_multiplier;
@@ -197,10 +240,10 @@ typename Coeff<Number>::SetOfV Coeff<Number>::getAllVariables() const {
     return out;
 }
 
-//todo better look with spaces
 template<typename Number>
 typename Coeff<Number>::String Coeff<Number>::toString() const {
     String out = NONVAR;
+    //todo better look with spaces
 
     if (m_multiplier != Number(0)) {
         std::stringstream ss;
