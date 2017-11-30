@@ -109,8 +109,8 @@ Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
     result = simpleParse(str.substr(0, __end));
 
     if (DEBUG) {
-        std::cout << "( at " << __end << "/" << str.length() << std::endl;
-        std::cout << "result: " << result << std::endl;
+        std::cout << "  '(' at " << __end << "/" << str.length() << std::endl;
+        std::cout << "  result: " << result << std::endl;
     }
 
     __beg = __end + 1;
@@ -128,14 +128,14 @@ Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
         }
 
         if (DEBUG) {
-            std::cout << "beg: " << __beg << " end: " << __end << std::endl;
+            std::cout << "  beg: " << __beg << " end: " << __end << std::endl;
         }
 
         if (str[__beg] == '-') {
             if (__beg - 1 < 0 || str[__beg - 1] == '(') {  //unary -
 
                 if (DEBUG) {
-                    std::cout << "unary-\n";
+                    std::cout << "  unary-\n";
                 }
 
                 Coeff<Number> tmp = parse(str.substr(__beg, __end - __beg));
@@ -143,7 +143,7 @@ Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
             } else { //binary -
 
                 if (DEBUG) {
-                    std::cout << "binary-\n";
+                    std::cout << "  binary-\n";
                 }
 
                 Coeff<Number> tmp = parse(str.substr(__beg, __end - __beg));
@@ -153,7 +153,7 @@ Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
             if (__beg - 1 < 0 || str[__beg - 1] == '(') {  //unary +
 
                 if (DEBUG) {
-                    std::cout << "unary+\n";
+                    std::cout << "  unary+\n";
                 }
 
                 Coeff<Number> tmp = parse(str.substr(__beg, __end - __beg));
@@ -161,7 +161,7 @@ Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
             } else { //binary +
 
                 if (DEBUG) {
-                    std::cout << "binary+\n";
+                    std::cout << "  binary+\n";
                 }
 
                 Coeff<Number> tmp = parse(str.substr(__beg, __end - __beg));
@@ -209,24 +209,66 @@ Coeff<Number> Coeff<Number>::getRandom(unsigned long int seed) {
 template<typename Number>
 Coeff<Number> &Coeff<Number>::fix() {
     /** remove coeffs with 0 multiplier **/
+
+    if (DEBUG) {
+        std::cout << "fixing ( " << *this << " )";
+    }
+
     if (m_multiplier == Number(0)) {
+        if (DEBUG) {
+            std::cout << " -> mul = 0 ";
+        }
+
         m_coeffs.clear();
         m_variable = NONVAR;
     } else {
+        if (DEBUG) {
+            std::cout << " -> els ";
+        }
+
         for (auto it = m_coeffs.begin(); it != m_coeffs.end() && m_coeffs.size() > 1;) {
+            if (DEBUG) {
+                std::cout << "\n    child = " << *it;
+            }
+
             if (it->m_multiplier == Number(0)) {
                 it = m_coeffs.erase(it);
             } else { ++it; }
         }
+
+        if (DEBUG) {
+            std::cout << "\n      | " << *this << std::endl;
+        }
     }
 
     /** connect single child with parent if at least one have no variable **/
-    if (m_coeffs.size() == 1 &&
-        (m_variable == NONVAR || m_coeffs.begin()->m_variable == NONVAR)) {
-        Coeff tmp = *m_coeffs.begin();
-        m_multiplier *= tmp.m_multiplier;
-        m_coeffs = tmp.m_coeffs;
-        m_variable = (m_variable == NONVAR ? tmp.m_variable : m_variable);
+    if (m_coeffs.size() == 1) {
+        if (DEBUG) {
+            std::cout << "  sigle ";
+        }
+
+        if (m_variable == NONVAR || m_coeffs.begin()->m_variable == NONVAR) {
+            Coeff tmp = *m_coeffs.begin();
+            m_multiplier *= tmp.m_multiplier;
+            m_coeffs = tmp.m_coeffs;
+            m_variable = (m_variable == NONVAR ? tmp.m_variable : m_variable);
+        } else if (m_coeffs.begin()->m_variable < m_variable) {
+            /*
+             * todo
+             * dangerous use
+             * SetOfC{Coeff("a"), Coeff("b", Coeff("a"))
+             * use addCoeff insead?
+             */
+//            Coeff<Number> __tmp_coeff(m_variable, m_coeffs.begin()->m_coeffs);
+//            m_multiplier *= m_coeffs.begin()->m_multiplier;
+//            m_variable = m_coeffs.begin()->m_variable;
+//            m_coeffs.clear();
+//            m_coeffs.insert(__tmp_coeff);
+        }
+    }
+
+    if (DEBUG) {
+        std::cout << "  result: " << *this << std::endl;
     }
 
     return *this;
@@ -334,10 +376,11 @@ Coeff<Number> &Coeff<Number>::operator-=(Coeff<Number> const &a) {
     return *this;
 }
 
-//template <typename Number>
-//Coeff<Number> &Coeff<Number>::operator*=(Coeff<Number> const &a) {
-//    return Coeff<Number>(*this);
-//}
+template <typename Number>
+Coeff<Number> &Coeff<Number>::operator*=(Coeff<Number> const &a) {
+    *this = *this * a;
+    return *this;
+}
 
 //template <typename Number>
 //Coeff<Number> &Coeff<Number>::operator/=(const Coeff<Number> &a) {
@@ -359,19 +402,23 @@ Coeff<Number> Coeff<Number>::operator-() const {
 template<typename Number>
 Coeff<Number> &Coeff<Number>::addCoeff(Coeff<Number> const &coeff) {
     if (DEBUG) {
-        std::cout << *this << " addCoeff " << coeff << "\n";
+        std::cout << "addCoeff ( " << coeff << " ) to ( " << *this << " )\n";
     }
 
     if (coeff.m_multiplier != Number(0)) {
         auto it = m_coeffs.find(coeff);
         if (it == m_coeffs.end()) {
+            if (DEBUG) {
+                std::cout << "  not here\n";
+            }
+
             m_coeffs.insert(coeff);
         } else {
             Coeff<Number> tmp0(Number(1));
             Coeff<Number> tmp1(Number(1));
 
             if (DEBUG) {
-                std::cout << " > " << *it << " | " << coeff << "\n";
+                std::cout << "  here ";
             }
 
             tmp0 = *it + coeff;
@@ -385,20 +432,24 @@ Coeff<Number> &Coeff<Number>::addCoeff(Coeff<Number> const &coeff) {
 
 template<typename Number>
 Coeff<Number> &Coeff<Number>::putOut(Number num) {
-    for (auto &c : m_coeffs) {
-        c.m_multiplier /= num;
+    if (!m_coeffs.empty()) {
+        for (auto &c : m_coeffs) {
+            c.m_multiplier /= num;
+        }
+        m_multiplier *= num;
     }
-    m_multiplier *= num;
 
     return *this;
 }
 
 template<typename Number>
 Coeff<Number> &Coeff<Number>::putIn(Number num) {
-    for (auto &c : m_coeffs) {
-        c.m_multiplier *= num;
+    if (!m_coeffs.empty()) {
+        for (auto &c : m_coeffs) {
+            c.m_multiplier *= num;
+        }
+        m_multiplier /= num;
     }
-    m_multiplier /= num;
 
     return *this;
 }
@@ -488,13 +539,13 @@ typename Coeff<Number>::SetOfV Coeff<Number>::getAllVariables() const {
 }
 
 template<typename Number>
-typename Coeff<Number>::String Coeff<Number>::toString() const {
+typename Coeff<Number>::String Coeff<Number>::toString(int type) const {
     String out = NONVAR;
     //todo better look with spaces
 
-    if (m_multiplier != Number(0)) {
+    if (m_multiplier != Number(0) || type == 1) {
         std::stringstream ss;
-        if (m_variable != NONVAR || !m_coeffs.empty()) {
+        if ((m_variable != NONVAR || !m_coeffs.empty()) && type == 0) {
             if (m_multiplier == Number(-1)) { out += "-"; }
             else if (m_multiplier == Number(1)) {}
             else {

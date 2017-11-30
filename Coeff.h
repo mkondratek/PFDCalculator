@@ -24,8 +24,8 @@ template<typename Number>
 Coeff<Number> operator+(Coeff<Number> const &a, Coeff<Number> const &b);
 template<typename Number>
 Coeff<Number> operator-(Coeff<Number> const &a, Coeff<Number> const &b);
-//template<typename Number>
-//Coeff<Number> operator*(Coeff<Number> const &a, Coeff<Number> const &b);
+template<typename Number>
+Coeff<Number> operator*(Coeff<Number> const &a, Coeff<Number> const &b);
 //template<typename Number>
 //Coeff<Number> operator/(Coeff<Number> const &a, Coeff<Number> const &b);
 
@@ -86,8 +86,8 @@ public:
 
     friend Coeff<Number> operator-<Number>(Coeff<Number> const &a, Coeff<Number> const &b);
 
-//    template<typename N>
-//    friend Coeff<N> operator*(Coeff<N> const &a, Coeff<N> const &b);
+    template<typename N>
+    friend Coeff<N> operator*(Coeff<N> const &a, Coeff<N> const &b);
 
 //    template<typename N>
 //    friend Coeff<N> operator/(Coeff<N> const &a, Coeff<N> const &b);
@@ -96,7 +96,7 @@ public:
 
     Coeff<Number> &operator-=(Coeff<Number> const &a);
 
-//    Coeff<Number> &operator*=(Coeff<Number> const &a);
+    Coeff<Number> &operator*=(Coeff<Number> const &a);
 
 //    Coeff<Number> &operator/=(Coeff<Number> const &a);
 
@@ -124,7 +124,7 @@ public:
 
     SetOfV getAllVariables() const;
 
-    String toString() const;
+    String toString(int type = 0) const;
 
     friend std::ostream &operator<<<Number>(std::ostream &stream, Coeff<Number> const &coeff);
     friend std::istream &operator>><Number>(std::istream &stream, Coeff<Number> &coeff);
@@ -137,9 +137,7 @@ Coeff<Number> operator+(Coeff<Number> const &a, Coeff<Number> const &b) {
     Coeff<Number> y = b;
 
     if (DEBUG) {
-        std::cout << "operator+ multi( " << x.getMultiplier()
-                  << " | " << y.getMultiplier() << " ) var( "
-                  << x.getVariable() << " | " << y.getVariable() << " ) ";
+        std::cout << "operator+ ( " << x << " | " << y << " )";
     }
 
     Coeff<Number> result(Number(1));
@@ -151,42 +149,24 @@ Coeff<Number> operator+(Coeff<Number> const &a, Coeff<Number> const &b) {
         y.m_coeffs.insert(Coeff<Number>(1));
     }
 
-    if (x.m_variable == y.m_variable && x.m_multiplier == y.m_multiplier
-        && !x.m_coeffs.empty() && !y.m_coeffs.empty()) {
+    /* make coeffs with nonempty set having same multiplier */
+    if (x.m_multiplier != y.m_multiplier && !x.m_coeffs.empty()) {
+        x.putIn(x.m_multiplier);
+        y.putIn(y.m_multiplier);
+    }
+
+    if (x.m_variable == y.m_variable && !x.m_coeffs.empty()) {
 
         if (DEBUG) {
-            std::cout << " -> = =\n";
+            std::cout << " -> = !ept\n";
+            std::cout << "  " << x << " | " << y << "\n";
         }
-
-        Coeff<Number> tmp_a = x;
-        tmp_a.putOut(tmp_a.m_multiplier);
 
         result = y;
-        for (const auto &c : tmp_a.m_coeffs) { result.addCoeff(c); }
 
-    } else if (x.m_variable == y.m_variable
-               && !x.m_coeffs.empty() && !y.m_coeffs.empty()) {
+        for (const auto &c : x.m_coeffs) { result.addCoeff(c); }
 
-        if (DEBUG) {
-            std::cout << " -> = !ept tmp( ";
-        }
-
-        Coeff<Number> tmp_a = x;
-        Coeff<Number> tmp_b = y;
-        tmp_a.putIn(tmp_a.m_multiplier);
-        tmp_b.putIn(tmp_b.m_multiplier);
-
-        if (DEBUG) {
-            std::cout << tmp_a << " | " << tmp_b << " )\n";
-        }
-
-        for (const auto &c : tmp_a.m_coeffs) { result.addCoeff(c); }
-        for (const auto &c : tmp_b.m_coeffs) { result.addCoeff(c); }
-
-        result.m_variable = tmp_a.m_variable;
-
-    } else if (x.m_variable == y.m_variable
-               && x.m_coeffs.empty() && y.m_coeffs.empty()) {
+    } else if (x.m_variable == y.m_variable && x.m_coeffs.empty()) {
 
         if (DEBUG) {
             std::cout << " -> = ept\n";
@@ -194,7 +174,8 @@ Coeff<Number> operator+(Coeff<Number> const &a, Coeff<Number> const &b) {
 
         result = x;
         result.m_multiplier += y.m_multiplier;
-    } else {
+    }
+    else {
 
         if (DEBUG) {
             std::cout << " -> els\n";
@@ -204,7 +185,7 @@ Coeff<Number> operator+(Coeff<Number> const &a, Coeff<Number> const &b) {
     }
 
     if (DEBUG) {
-        std::cout << x << " + " << y << " = " << result << std::endl;
+        std::cout << "  " << x << " + " << y << " = " << result << std::endl;
     }
 
     return result;
@@ -212,15 +193,119 @@ Coeff<Number> operator+(Coeff<Number> const &a, Coeff<Number> const &b) {
 
 template<typename Number>
 Coeff<Number> operator-(Coeff<Number> const &a, Coeff<Number> const &b) {
+    if (DEBUG) {
+        std::cout << "operator- ( " << a << " | " << b << ")\n";
+    }
+
     Coeff<Number> tmp(b);
     tmp.m_multiplier *= Number(-1);
     return a + tmp;
 }
 
-//template<typename Number>
-//Coeff<Number> operator*(Coeff<Number> const &a, Coeff<Number> const &b) {
-//    return Coeff<Number>();
-//}
+template<typename Number>
+Coeff<Number> operator*(Coeff<Number> const &a, Coeff<Number> const &b) {
+    Coeff<Number> result(Number(1));
+
+    Coeff<Number> x = a;
+    Coeff<Number> y = b;
+
+    if (DEBUG) {
+        std::cout << "operator* ( " << x << " | " << y  << " )";
+    }
+
+    if (y < x) {
+        std::swap(x, y);
+
+        if (DEBUG) {
+            std::cout << " swaping";
+        }
+    }
+
+    if (x.m_multiplier == Number(0) || y.m_multiplier == Number(0)) {
+
+        if (DEBUG) {
+            std::cout << " -> 0 | 0\n";
+        }
+
+        result.m_multiplier = 0; //returns 0
+    } else if (x.m_variable == Coeff<Number>::NONVAR && x.m_coeffs.empty()) {
+
+        if (DEBUG) {
+            std::cout << " -> 1 * y\n";
+        }
+
+        result = y;
+        result.m_multiplier *= x.m_multiplier;
+    } else if (y.m_variable == Coeff<Number>::NONVAR && y.m_coeffs.empty()) {
+
+        if (DEBUG) {
+            std::cout << " -> x * 1\n";
+        }
+
+        result = x;
+        result.m_multiplier *= y.m_multiplier;
+    } else if (x.m_coeffs.empty() && !y.m_coeffs.empty()) {
+
+        if (DEBUG) {
+            std::cout << " -> x ept\n";
+        }
+
+        result = x;
+        result.addCoeff(y);
+        result.putOut(y.m_multiplier);
+    } else if (!x.m_coeffs.empty() && y.m_coeffs.empty()) {
+
+        if (DEBUG) {
+            std::cout << " -> y ept\n";
+        }
+
+        result = y;
+        result.addCoeff(x);
+        result.putOut(x.m_multiplier);
+    } else if (x.m_coeffs.empty() && y.m_coeffs.empty()) {
+
+        if (DEBUG) {
+            std::cout << " -> both ept\n";
+        }
+
+        result = x;
+        result.addCoeff(y);
+        result.putOut(y.m_multiplier);
+
+    } else {
+
+        if (DEBUG) {
+            std::cout << " -> both !ept\n";
+        }
+
+        result.m_multiplier = x.m_multiplier * y.m_multiplier;
+        result.m_variable = x.m_variable;
+        Coeff<Number> inner(y.m_variable);
+
+        for (auto & c_a : x.m_coeffs) {
+            for (auto & c_b : y.m_coeffs) {
+                inner.addCoeff(c_a * c_b);
+                if (DEBUG) {
+                    std::cout << "  then " << inner << "    ";
+                }
+            }
+        }
+
+        if (DEBUG) {
+            std::cout << std::endl;
+        }
+
+        result.addCoeff(inner);
+    }
+
+    result.fix();
+
+    if (DEBUG) {
+        std::cout << "  " << x << " * " << y << " = " << result << std::endl;
+    }
+
+    return result;
+}
 
 //template<typename Number>
 //Coeff<Number> operator/(const Coeff<Number> &a, const Coeff<Number> &b) {
