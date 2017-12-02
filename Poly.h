@@ -5,7 +5,6 @@
 #ifndef PFDCALCULATOR_POLY_H
 #define PFDCALCULATOR_POLY_H
 
-
 #include <vector>
 #include "Coeff.h"
 

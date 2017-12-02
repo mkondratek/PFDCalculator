@@ -33,7 +33,5 @@
 *.out
 *.app
 
-.gitignore
 .idea/
-Rational.h
 cmake-build-debug/

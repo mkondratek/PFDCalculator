@@ -3,12 +3,78 @@
 //
 
 #include <iostream>
-#include <type_traits>
 #include <vector>
 #include "Coeff.h"
 
 template<typename Number>
 const typename Coeff<Number>::String Coeff<Number>::NONVAR = "";
+template<typename Number>
+const int Coeff<Number>::FULL = 1;
+template<typename Number>
+const int Coeff<Number>::TIGHT = 2;
+template<typename Number>
+const int Coeff<Number>::WIDE = 4;
+template<typename Number>
+const int Coeff<Number>::BIN_MINUS = 8;
+
+template <typename Number>
+Coeff<Number>::SetOfC::SetOfC() {}
+
+template <typename Number>
+Coeff<Number>::SetOfC::SetOfC(Coeff<Number> const &coeff) {
+    add(coeff);
+}
+
+template <typename Number>
+Coeff<Number>::SetOfC::SetOfC(std::initializer_list<Coeff<Number>> il) {
+    for (auto & c : il) {
+        add(c);
+    }
+}
+
+template <typename Number>
+typename Coeff<Number>::SetOfC &Coeff<Number>::SetOfC::add(Coeff<Number> const &coeff) {
+    if (DEBUG) {
+        std::cout << "add ( " << coeff << " )\n";
+    }
+
+    if (coeff.m_multiplier != Number(0) || m_coeffs.empty()) {
+        if (m_coeffs.size() == 1 && m_coeffs.begin()->m_multiplier == Number(0)) {
+            m_coeffs.clear();
+        }
+
+        auto it = m_coeffs.find(coeff);
+        if (it == m_coeffs.end()) {
+            if (DEBUG) {
+                std::cout << "  not here\n";
+            }
+
+            m_coeffs.insert(coeff);
+        } else {
+            Coeff<Number> tmp(Number(1));
+
+            if (DEBUG) {
+                std::cout << "  here ";
+            }
+
+            tmp = *it + coeff;
+
+            if (DEBUG) {
+                std::cout << "  " << *it << " -> " << coeff << "\n";
+            }
+
+            m_coeffs.erase(it);
+            add(tmp);
+        }
+    }
+
+    return *this;
+}
+
+template<typename Number>
+std::set<Coeff<Number>> &Coeff<Number>::SetOfC::asSet() const {
+    return m_coeffs;
+}
 
 template<typename Number>
 Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
@@ -139,7 +205,7 @@ Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
                 }
 
                 Coeff<Number> tmp = parse(str.substr(__beg, __end - __beg));
-                result.addCoeff(tmp);
+                result.add(tmp);
             } else { //binary -
 
                 if (DEBUG) {
@@ -147,7 +213,7 @@ Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
                 }
 
                 Coeff<Number> tmp = parse(str.substr(__beg, __end - __beg));
-                result.addCoeff(tmp);
+                result.add(tmp);
             }
         } else if (str[__beg] == '+') {
             if (__beg - 1 < 0 || str[__beg - 1] == '(') {  //unary +
@@ -157,7 +223,7 @@ Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
                 }
 
                 Coeff<Number> tmp = parse(str.substr(__beg, __end - __beg));
-                result.addCoeff(tmp);
+                result.add(tmp);
             } else { //binary +
 
                 if (DEBUG) {
@@ -165,11 +231,11 @@ Coeff<Number> Coeff<Number>::parse(Coeff::String str) {
                 }
 
                 Coeff<Number> tmp = parse(str.substr(__beg, __end - __beg));
-                result.addCoeff(tmp);
+                result.add(tmp);
             }
         } else {
             Coeff<Number> tmp = parse(str.substr(__beg, __end - __beg));
-            result.addCoeff(tmp);
+            result.add(tmp);
         }
 
         i = __end;
@@ -187,14 +253,15 @@ Coeff<Number> Coeff<Number>::getRandom(unsigned long int seed) {
 
     var[0] = (rand() % 4 + 'a');
 
-    Coeff<Number> result(Number(rand() % 300 + 100) / Number(100), var);
+    Coeff<Number> result((Number(rand() % 300 + 100) / Number(100))
+                         * (rand() % 2 == 0 ? Number(-1) : Number(1)), var);
 
     if (seed > 0) {
         unsigned long children = rand() % (seed / 2 + 2);
 
         while (children--) {
             if ((rand() % 10) < 7) {
-                result.addCoeff(getRandom(seed / 3 + children));
+                result.add(getRandom(seed / 3 + children));
             }
         }
     }
@@ -219,20 +286,20 @@ Coeff<Number> &Coeff<Number>::fix() {
             std::cout << " -> mul = 0 ";
         }
 
-        m_coeffs.clear();
+        m_coeffs.asSet().clear();
         m_variable = NONVAR;
     } else {
         if (DEBUG) {
             std::cout << " -> els ";
         }
 
-        for (auto it = m_coeffs.begin(); it != m_coeffs.end() && m_coeffs.size() > 1;) {
+        for (auto it = m_coeffs.asSet().begin(); it != m_coeffs.asSet().end() && m_coeffs.asSet().size() > 1;) {
             if (DEBUG) {
                 std::cout << "\n    child = " << *it;
             }
 
             if (it->m_multiplier == Number(0)) {
-                it = m_coeffs.erase(it);
+                it = m_coeffs.asSet().erase(it);
             } else { ++it; }
         }
 
@@ -242,28 +309,28 @@ Coeff<Number> &Coeff<Number>::fix() {
     }
 
     /** connect single child with parent if at least one have no variable **/
-    if (m_coeffs.size() == 1) {
+    if (m_coeffs.asSet().size() == 1) {
         if (DEBUG) {
             std::cout << "  sigle ";
         }
 
-        if (m_variable == NONVAR || m_coeffs.begin()->m_variable == NONVAR) {
-            Coeff tmp = *m_coeffs.begin();
+        if (m_coeffs.asSet().begin()->m_multiplier == Number(0)) {
+            m_coeffs.asSet().clear();
+            m_variable = NONVAR;
+            m_multiplier = 0;
+
+        } else if (m_variable == NONVAR || m_coeffs.asSet().begin()->m_variable == NONVAR) {
+            Coeff tmp = *m_coeffs.asSet().begin();
             m_multiplier *= tmp.m_multiplier;
             m_coeffs = tmp.m_coeffs;
             m_variable = (m_variable == NONVAR ? tmp.m_variable : m_variable);
-        } else if (m_coeffs.begin()->m_variable < m_variable) {
-            /*
-             * todo
-             * dangerous use
-             * SetOfC{Coeff("a"), Coeff("b", Coeff("a"))
-             * use addCoeff insead?
-             */
-//            Coeff<Number> __tmp_coeff(m_variable, m_coeffs.begin()->m_coeffs);
-//            m_multiplier *= m_coeffs.begin()->m_multiplier;
-//            m_variable = m_coeffs.begin()->m_variable;
-//            m_coeffs.clear();
-//            m_coeffs.insert(__tmp_coeff);
+
+        } else if (m_coeffs.asSet().begin()->m_variable < m_variable) {
+            Coeff<Number> __tmp_coeff(m_variable, m_coeffs.asSet().begin()->m_coeffs);
+            m_multiplier *= m_coeffs.asSet().begin()->m_multiplier;
+            m_variable = m_coeffs.asSet().begin()->m_variable;
+            m_coeffs.asSet().clear();
+            m_coeffs.asSet().insert(__tmp_coeff);
         }
     }
 
@@ -287,7 +354,7 @@ bool Coeff<Number>::operator==(Coeff<Number> const &other) const {
 template<typename Number>
 Coeff<Number>::Coeff(const Number &multiplier,
                      const Coeff::String &variable,
-                     const Coeff::SetOfC &coeffs) noexcept
+                     const Coeff<Number>::SetOfC &coeffs) noexcept
         : m_multiplier(multiplier), m_variable(variable), m_coeffs(coeffs) { fix(); }
 
 template<typename Number>
@@ -297,12 +364,12 @@ Coeff<Number>::Coeff(const Number &multiplier,
 
 template<typename Number>
 Coeff<Number>::Coeff(const Number &multiplier,
-                     const Coeff::SetOfC &coeffs) noexcept
+                     const Coeff<Number>::SetOfC &coeffs) noexcept
         : m_multiplier(multiplier), m_variable(NONVAR), m_coeffs(coeffs) { fix(); }
 
 template<typename Number>
-Coeff<Number>::Coeff(const Coeff<Number>::String &variable,
-                     const Coeff::SetOfC &coeffs) noexcept
+Coeff<Number>::Coeff(const Coeff::String &variable,
+                     const Coeff<Number>::SetOfC &coeffs) noexcept
         : m_multiplier(Number(1)), m_variable(variable), m_coeffs(coeffs) { fix(); }
 
 template<typename Number>
@@ -314,7 +381,7 @@ Coeff<Number>::Coeff(const Coeff::String &variable) noexcept
         : m_multiplier(Number(1)), m_variable(variable) {}
 
 template<typename Number>
-Coeff<Number>::Coeff(const Coeff::SetOfC &coeffs) noexcept
+Coeff<Number>::Coeff(const Coeff<Number>::SetOfC &coeffs) noexcept
         : m_multiplier(Number(1)), m_variable(NONVAR), m_coeffs(coeffs) { fix(); }
 
 template<typename Number>
@@ -400,40 +467,20 @@ Coeff<Number> Coeff<Number>::operator-() const {
 }
 
 template<typename Number>
-Coeff<Number> &Coeff<Number>::addCoeff(Coeff<Number> const &coeff) {
+Coeff<Number> &Coeff<Number>::add(Coeff<Number> const &coeff) {
     if (DEBUG) {
-        std::cout << "addCoeff ( " << coeff << " ) to ( " << *this << " )\n";
+        std::cout << "add ( " << coeff << " ) to ( " << *this << " )\n";
     }
 
-    if (coeff.m_multiplier != Number(0)) {
-        auto it = m_coeffs.find(coeff);
-        if (it == m_coeffs.end()) {
-            if (DEBUG) {
-                std::cout << "  not here\n";
-            }
+    m_coeffs.add(coeff);
 
-            m_coeffs.insert(coeff);
-        } else {
-            Coeff<Number> tmp0(Number(1));
-            Coeff<Number> tmp1(Number(1));
-
-            if (DEBUG) {
-                std::cout << "  here ";
-            }
-
-            tmp0 = *it + coeff;
-
-            m_coeffs.erase(it);
-            this->addCoeff(tmp0);
-        }
-    }
     return *this;
 }
 
 template<typename Number>
 Coeff<Number> &Coeff<Number>::putOut(Number num) {
-    if (!m_coeffs.empty()) {
-        for (auto &c : m_coeffs) {
+    if (!m_coeffs.asSet().empty()) {
+        for (auto &c : m_coeffs.asSet()) {
             c.m_multiplier /= num;
         }
         m_multiplier *= num;
@@ -444,8 +491,8 @@ Coeff<Number> &Coeff<Number>::putOut(Number num) {
 
 template<typename Number>
 Coeff<Number> &Coeff<Number>::putIn(Number num) {
-    if (!m_coeffs.empty()) {
-        for (auto &c : m_coeffs) {
+    if (!m_coeffs.asSet().empty()) {
+        for (auto &c : m_coeffs.asSet()) {
             c.m_multiplier *= num;
         }
         m_multiplier /= num;
@@ -466,12 +513,12 @@ Coeff<Number> &Coeff<Number>::apply(Coeff<Number>::String variable, Number value
     }
 
     Coeff<Number> tmp_cff;
-    for (auto c : m_coeffs) {
+    for (auto c : m_coeffs.asSet()) {
         c.apply(variable, value);
-        tmp_cff.addCoeff(c);
+        tmp_cff.add(c);
     }
 
-    if (!m_coeffs.empty() && tmp_cff.m_coeffs.empty()) {
+    if (!m_coeffs.asSet().empty() && tmp_cff.m_coeffs.asSet().empty()) {
         //m_coeffs sumed to 0 after apply
         m_multiplier = Number(0);
         m_variable = NONVAR;
@@ -508,12 +555,12 @@ Number Coeff<Number>::calculate(MapOfV values) const {
 }
 
 template<typename Number>
-Number Coeff<Number>::getMultiplier() const {
+Number Coeff<Number>::getMulti() const {
     return m_multiplier;
 }
 
 template<typename Number>
-typename Coeff<Number>::String Coeff<Number>::getVariable() const {
+typename Coeff<Number>::String Coeff<Number>::getVar() const {
     return m_variable;
 }
 
@@ -523,15 +570,15 @@ typename Coeff<Number>::SetOfC Coeff<Number>::getCoeffs() const {
 }
 
 template<typename Number>
-typename Coeff<Number>::SetOfV Coeff<Number>::getAllVariables() const {
+typename Coeff<Number>::SetOfV Coeff<Number>::getAllVars() const {
     SetOfV out;
 
     if (!m_variable.empty()) {
         out.insert(m_variable);
     }
 
-    for (const auto &c : m_coeffs) {
-        SetOfV tmp = c.getAllVariables();
+    for (const auto &c : m_coeffs.asSet()) {
+        SetOfV tmp = c.getAllVars();
         out.insert(tmp.begin(), tmp.end());
     }
 
@@ -541,29 +588,52 @@ typename Coeff<Number>::SetOfV Coeff<Number>::getAllVariables() const {
 template<typename Number>
 typename Coeff<Number>::String Coeff<Number>::toString(int type) const {
     String out = NONVAR;
-    //todo better look with spaces
 
-    if (m_multiplier != Number(0) || type == 1) {
+    if (m_multiplier != Number(0) || (type & FULL)) {
         std::stringstream ss;
-        if ((m_variable != NONVAR || !m_coeffs.empty()) && type == 0) {
-            if (m_multiplier == Number(-1)) { out += "-"; }
-            else if (m_multiplier == Number(1)) {}
+        if ((m_variable != NONVAR || !m_coeffs.asSet().empty()) && !(type & FULL)) {
+            if (m_multiplier == Number(-1)) {
+                out += "-";
+                if ((type & BIN_MINUS)) {
+                    out += " ";
+                }
+            }
+            else if (m_multiplier == Number(1) && !(type & FULL)) {}
             else {
-                ss << m_multiplier;
+                if (m_multiplier < Number(0) && (type & BIN_MINUS)) {
+                    ss << "- " << (m_multiplier * Number(-1));
+                } else {
+                    ss << m_multiplier;
+                }
             }
         } else {
-            ss << m_multiplier;
+            if (m_multiplier < Number(0) && (type & BIN_MINUS)) {
+                ss << "- " << (m_multiplier * Number(-1));
+            } else {
+                ss << m_multiplier;
+            }
         }
         out += ss.str();
 
         out += m_variable;
 
-        if (!m_coeffs.empty()) {
-            { out += "("; }
-            for (auto &c : m_coeffs) {
-                out += (c == *m_coeffs.begin() || c.m_multiplier <= Number(0) ? NONVAR : "+") + c.toString();
+        if (!m_coeffs.asSet().empty()) {
+            out += "(";
+            if (type & WIDE) {
+                out += " ";
             }
-            { out += ")"; }
+
+            for (auto &c : m_coeffs.asSet()) {
+                out += //((!(c == *m_coeffs.rbegin()) && !(c == *m_coeffs.begin()) && (type & WIDE)) ? "_" : "") +
+                        ((c == *m_coeffs.asSet().begin() || c.m_multiplier <= Number(0) ?
+                        NONVAR : ((type & WIDE) ? "+ " : "+")) +
+                        c.toString(type + ((c == *m_coeffs.asSet().begin() || !(type & WIDE)) ? 0 : BIN_MINUS)));
+
+                if (type & WIDE) {
+                    out += " ";
+                }
+            }
+            out += ")";
         }
     }
 
