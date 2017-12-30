@@ -13,8 +13,8 @@
  * throwing exception (and test it)
  * parsing error
  * fast polynomial multiplication
- * keep roots sorted
- * set tostring type in cff and
+ * set tostring type in cff and poly
+ * tests for poly !!!
  */
 
 int main(int argc, char* argv[]) {

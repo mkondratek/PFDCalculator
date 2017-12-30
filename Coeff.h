@@ -64,6 +64,8 @@ private:
     String         m_variable;
     SetOfC         m_coeffs;
 
+    static int display_t;
+
     Coeff<Number>& fix(); //removes 0s
 
 public:
@@ -123,7 +125,7 @@ public:
 
     SetOfV getAllVars() const;
 
-    String toString(int type = TIGHT) const;
+    String toString(int type = display_t) const;
 
     friend std::ostream& operator<<<Number>(std::ostream& stream, Coeff<Number> const& coeff);
     friend std::istream& operator>><Number>(std::istream& stream, Coeff<Number>& coeff);

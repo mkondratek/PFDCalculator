@@ -65,6 +65,9 @@ std::set<Coeff<Number>>& Coeff<Number>::SetOfC::asSet() const {
 }
 
 template<typename Number>
+int Coeff<Number>::display_t = TIGHT;
+
+template<typename Number>
 Coeff<Number>& Coeff<Number>::fix() {
     /** remove coeffs with 0 multiplier **/
 
@@ -813,7 +816,8 @@ typename Coeff<Number>::String Coeff<Number>::toString(int type) const {
             for (auto &c : m_coeffs.asSet()) {
                 out.append((c == *m_coeffs.asSet().begin() || c.m_multiplier <= Number(0) ?
                           NONVAR : ((type & WIDE) ? "+ " : "+")) +
-                         c.toString(type + ((c == *m_coeffs.asSet().begin() || !(type & WIDE)) ? 0 : BIN_MINUS)));
+                         c.toString(type + ((c == *m_coeffs.asSet().begin() ||
+                                 !(type & WIDE)) ? 0 : BIN_MINUS)));
 
                 if (type & WIDE) {
                     out.append(" ");
