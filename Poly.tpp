@@ -59,7 +59,7 @@ Poly<Number>::Poly(Poly<Number>::Cff const& cff, unsigned int exp) noexcept {
 
 template<typename Number>
 Poly<Number>::Poly(Poly<Number>::Numvec const& roots) noexcept {
-    Poly tmp(Number(1));
+    Poly tmp(Number((roots.empty() ? 0 : 1)));
 
     for (auto const& r : roots) {
         tmp *= (Poly(-r) + Poly(Number(1), 1));
@@ -68,6 +68,19 @@ Poly<Number>::Poly(Poly<Number>::Numvec const& roots) noexcept {
     m_roots = roots;
     m_roots_valid = true;
     std::sort(m_roots.begin(), m_roots.end());
+    m_monomials = tmp.m_monomials;
+}
+
+template<typename Number>
+Poly<Number>::Poly(Poly<Number>::Cffvec const& roots) noexcept {
+    Poly tmp(Number((roots.empty() ? 0 : 1)));
+
+    for (auto const& r : roots) {
+        tmp *= (Poly(-r) + Poly(Number(1), 1));
+    }
+
+    m_roots_valid = false;
+    m_monomials = tmp.m_monomials;
 }
 
 template<typename Number>
@@ -114,14 +127,26 @@ Poly<Number> &Poly<Number>::operator=(Poly<Number> &&poly) noexcept {
 
 template <typename Number>
 Poly<Number> operator+(Poly<Number> const &a, Poly<Number> const &b) {
+    if (DEBUG_MODE) {
+        std::cout << "operator+ ( " << a << " | " << b << " )" << std::endl;
+    }
+
     Poly<Number> result(a);
-    result.m_monomials.resize(std::max(a.getDegree(), b.getDegree()), Coeff<Number>(Number(0)));
-    for (unsigned int i = 0; i < b.getDegree(); ++i) {
+    result.m_monomials.resize(std::max(a.getDegree(), b.getDegree()) + 1, Coeff<Number>(Number(0)));
+    for (unsigned int i = 0; i < b.getDegree() + 1; ++i) {
+        std::cout << "rm[" << i << "] " << result.m_monomials[i] << " | ";
+        std::cout << "bm[" << i << "] " << b.m_monomials[i] << " ->\n";
         result.m_monomials[i] += b.m_monomials[i];
+        std::cout << "rm[" << i << "] " << result.m_monomials[i] << " | ";
+        std::cout << "bm[" << i << "] " << b.m_monomials[i] << std::endl;
     }
 
     result.m_roots_valid = false;
     //todo be able to remove line above
+
+    if (DEBUG_MODE) {
+        std::cout << "  -> " << result << std::endl;
+    }
 
     return result;
 }
@@ -133,11 +158,15 @@ Poly<Number> operator-(Poly<Number> const &a, Poly<Number> const &b) {
 
 template <typename Number>
 Poly<Number> operator*(Poly<Number> const &a, Poly<Number> const &b) {
+    if (DEBUG_MODE) {
+        std::cout << "operator* ( " << a << " | " << b << " )" << std::endl;
+    }
+
     Poly<Number> result;
-    result.m_monomials.resize(a.getDegree() * b.getDegree(), Coeff<Number>(Number(0)));
-    for (int i = 0; i < a.getDegree(); ++i) {
-        for (int j = 0; j < b.getDegree(); ++j) {
-            result.m_monomials[i * j] = a.m_monomials[i] * b.m_monomials[j];
+    result.m_monomials.resize(a.getDegree() + b.getDegree() + 1, Coeff<Number>(Number(0)));
+    for (int i = 0; i < a.getDegree() + 1; ++i) {
+        for (int j = 0; j < b.getDegree() + 1; ++j) {
+            result.m_monomials[i + j] += a.m_monomials[i] * b.m_monomials[j];
         }
     }
 
@@ -152,6 +181,10 @@ Poly<Number> operator*(Poly<Number> const &a, Poly<Number> const &b) {
     }
 
     std::sort(result.m_roots.begin(), result.m_roots.end());
+
+    if (DEBUG_MODE) {
+        std::cout << "  -> " << result << std::endl;
+    }
 
     return result;
 }
@@ -191,7 +224,7 @@ template<typename Number>
 Poly<Number> Poly<Number>::operator-() const {
     Poly<Number> tmp(*this);
     for (auto &c : tmp.m_monomials) {
-        c *= Number(-1);
+        c *= Cff(Number(-1));
     }
     return tmp;
 }
@@ -319,8 +352,17 @@ typename Poly<Number>::String Poly<Number>::toString(int type) const {
                 }
 
                 if ((type & int(EXT)) || i > 0) {
-                    str.append((type & int(Cff::WIDE) ? " x ^ " : "x^") + std::to_string(i));
+                    if (type & int(EXT)) {
+                        str.append((type & int(Cff::WIDE) ? " x ^ " : "x^"));
+                        str.append(std::to_string(i));
+                    } else if (i == 1) {
+                        str.append((type & int(Cff::WIDE) ? " x " : "x"));
+                    } else {
+                        str.append((type & int(Cff::WIDE) ? " x ^ " : "x^"));
+                        str.append(std::to_string(i));
+                    }
                 }
+
 
                 first_printed = true;
             }

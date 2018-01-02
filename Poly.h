@@ -8,6 +8,7 @@
 #include <vector>
 #include "Coeff.h"
 
+#define DEBUG_MODE true
 
 /** declaration begin **/
 template<typename Number>
@@ -60,6 +61,7 @@ public:
     explicit Poly(Cff const& cff, unsigned int exp = 0) noexcept ;
 
     explicit Poly(Numvec const& roots) noexcept ;
+    explicit Poly(Cffvec const& roots) noexcept ;
 
     Poly<Number>(Poly<Number> const& poly) noexcept;
     Poly<Number>(Poly<Number>&& poly) noexcept;

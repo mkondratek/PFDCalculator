@@ -102,10 +102,10 @@ Coeff<Number>& Coeff<Number>::fix() {
         }
     }
 
-    /** connect singel child with parent if at least one have no variable **/
+    /** connect single child with parent if at least one have no variable **/
     if (m_coeffs.asSet().size() == 1) {
         if (DEBUG_MODE) {
-            std::cout << "  singel ";
+            std::cout << "  single ";
         }
 
         if (m_coeffs.asSet().begin()->m_multiplier == Number(0)) {
@@ -434,46 +434,57 @@ Coeff<Number> operator+(Coeff<Number> const& a, Coeff<Number> const& b) {
 
     Coeff<Number> result(Number(1));
 
-    if (x.m_coeffs.asSet().empty() && !y.m_coeffs.asSet().empty()) {
-        x.m_coeffs.asSet().insert(Coeff<Number>(1));
-    }
-    else if (!x.m_coeffs.asSet().empty() && y.m_coeffs.asSet().empty()) {
-        y.m_coeffs.asSet().insert(Coeff<Number>(1));
-    }
-
-    /* make coeffs with nonempty set having same multiplier */
-    if (x.m_multiplier != y.m_multiplier && !x.m_coeffs.asSet().empty()) {
-        x.putIn(x.m_multiplier);
-        y.putIn(y.m_multiplier);
-    }
-
-    if (x.m_variable == y.m_variable && !x.m_coeffs.asSet().empty()) {
-
+    if (x.ready() && x.calculate() == Number(0)) {
         if (DEBUG_MODE) {
-            std::cout << " -> = !ept\n";
-            std::cout << "  " << x << " | " << y << "\n";
+            std::cout << " -> x == 0\n";
         }
-
         result = y;
-
-        for (const auto &c : x.m_coeffs.asSet()) { result.add(c); }
-
-    } else if (x.m_variable == y.m_variable && x.m_coeffs.asSet().empty()) {
-
+    } else if (y.ready() && y.calculate() == Number(0)) {
         if (DEBUG_MODE) {
-            std::cout << " -> = ept\n";
+            std::cout << " -> y == 0\n";
         }
-
         result = x;
-        result.m_multiplier += y.m_multiplier;
-    }
-    else {
+    } else {
 
-        if (DEBUG_MODE) {
-            std::cout << " -> els\n";
+        if (x.m_coeffs.asSet().empty() && !y.m_coeffs.asSet().empty()) {
+            x.m_coeffs.asSet().insert(Coeff<Number>(1));
+        } else if (!x.m_coeffs.asSet().empty() && y.m_coeffs.asSet().empty()) {
+            y.m_coeffs.asSet().insert(Coeff<Number>(1));
         }
 
-        result.add(x).add(y).fix();
+        /* make coeffs with nonempty set having same multiplier */
+        if (x.m_multiplier != y.m_multiplier && !x.m_coeffs.asSet().empty()) {
+            if (x.m_multiplier != Number(0)) { x.putIn(x.m_multiplier); }
+            if (y.m_multiplier != Number(0)) { y.putIn(y.m_multiplier); }
+        }
+
+        if (x.m_variable == y.m_variable && !x.m_coeffs.asSet().empty()) {
+
+            if (DEBUG_MODE) {
+                std::cout << " -> = !ept\n";
+                std::cout << "  " << x << " | " << y << "\n";
+            }
+
+            result = y;
+
+            for (const auto &c : x.m_coeffs.asSet()) { result.add(c); }
+
+        } else if (x.m_variable == y.m_variable && x.m_coeffs.asSet().empty()) {
+
+            if (DEBUG_MODE) {
+                std::cout << " -> = ept\n";
+            }
+
+            result = x;
+            result.m_multiplier += y.m_multiplier;
+        } else {
+
+            if (DEBUG_MODE) {
+                std::cout << " -> els\n";
+            }
+
+            result.add(x).add(y).fix();
+        }
     }
 
     if (DEBUG_MODE) {
@@ -839,7 +850,6 @@ typename Coeff<Number>::String Coeff<Number>::toString(int type) const {
 
 template<typename Number>
 std::ostream& operator<<(std::ostream &stream, Coeff<Number> const& coeff) {
-    stream << coeff.toString();
     stream << coeff.toString();
     return stream;
 }

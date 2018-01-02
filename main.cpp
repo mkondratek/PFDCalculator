@@ -14,7 +14,7 @@
  * parsing error
  * fast polynomial multiplication
  * set tostring type in cff and poly
- * tests for poly !!!
+ * complex (?)
  */
 
 int main(int argc, char* argv[]) {

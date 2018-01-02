@@ -10,7 +10,7 @@
 #include <set>
 #include <map>
 
-#define DEBUG_MODE false
+#define DEBUG_MODE true
 
 /** declaration begin **/
 template<typename Number>
