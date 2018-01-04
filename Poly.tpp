@@ -134,11 +134,7 @@ Poly<Number> operator+(Poly<Number> const &a, Poly<Number> const &b) {
     Poly<Number> result(a);
     result.m_monomials.resize(std::max(a.getDegree(), b.getDegree()) + 1, Coeff<Number>(Number(0)));
     for (unsigned int i = 0; i < b.getDegree() + 1; ++i) {
-        std::cout << "rm[" << i << "] " << result.m_monomials[i] << " | ";
-        std::cout << "bm[" << i << "] " << b.m_monomials[i] << " ->\n";
         result.m_monomials[i] += b.m_monomials[i];
-        std::cout << "rm[" << i << "] " << result.m_monomials[i] << " | ";
-        std::cout << "bm[" << i << "] " << b.m_monomials[i] << std::endl;
     }
 
     result.m_roots_valid = false;

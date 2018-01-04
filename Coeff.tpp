@@ -23,7 +23,7 @@ Coeff<Number>::SetOfC::SetOfC(std::initializer_list<Coeff<Number>> il) {
 template <typename Number>
 typename Coeff<Number>::SetOfC &Coeff<Number>::SetOfC::add(Coeff<Number> const& coeff) {
     if (DEBUG_MODE) {
-        std::cout << "add ( " << coeff << " )\n";
+        std::cout << "s.add ( " << coeff << " )\n";
     }
 
     if (coeff.m_multiplier != Number(0) || m_coeffs.empty()) {
@@ -94,7 +94,13 @@ Coeff<Number>& Coeff<Number>::fix() {
 
             if (it->m_multiplier == Number(0)) {
                 it = m_coeffs.asSet().erase(it);
-            } else { ++it; }
+            } else {
+                if (m_coeffs.asSet().size() == 1) {
+                    putOut(it->m_multiplier);
+                }
+
+                ++it;
+            }
         }
 
         if (DEBUG_MODE) {
@@ -469,6 +475,8 @@ Coeff<Number> operator+(Coeff<Number> const& a, Coeff<Number> const& b) {
 
             for (const auto &c : x.m_coeffs.asSet()) { result.add(c); }
 
+            result.fix();
+
         } else if (x.m_variable == y.m_variable && x.m_coeffs.asSet().empty()) {
 
             if (DEBUG_MODE) {
@@ -477,6 +485,9 @@ Coeff<Number> operator+(Coeff<Number> const& a, Coeff<Number> const& b) {
 
             result = x;
             result.m_multiplier += y.m_multiplier;
+
+            result.fix();
+
         } else {
 
             if (DEBUG_MODE) {
@@ -651,7 +662,7 @@ Coeff<Number> Coeff<Number>::operator-() const {
 template<typename Number>
 Coeff<Number>& Coeff<Number>::add(Coeff<Number> const& coeff) {
     if (DEBUG_MODE) {
-        std::cout << "add ( " << coeff << " ) to ( " << *this << " )\n";
+        std::cout << "c.add ( " << coeff << " ) to ( " << *this << " )\n";
     }
 
     m_coeffs.add(coeff);
@@ -661,6 +672,10 @@ Coeff<Number>& Coeff<Number>::add(Coeff<Number> const& coeff) {
 
 template<typename Number>
 Coeff<Number>& Coeff<Number>::putOut(Number const& num) {
+    if (DEBUG_MODE) {
+        std::cout << "  putOut " << num << " from " << *this;
+    }
+
     if (!m_coeffs.asSet().empty()) {
         for (auto &c : m_coeffs.asSet()) {
             c.m_multiplier /= num;
@@ -668,16 +683,28 @@ Coeff<Number>& Coeff<Number>::putOut(Number const& num) {
         m_multiplier *= num;
     }
 
+    if (DEBUG_MODE) {
+        std::cout << " -> " << *this << std::endl;
+    }
+
     return *this;
 }
 
 template<typename Number>
 Coeff<Number>& Coeff<Number>::putIn(Number const& num) {
+    if (DEBUG_MODE) {
+        std::cout << "  putIn  " << num << " from " << *this;
+    }
+
     if (!m_coeffs.asSet().empty()) {
         for (auto &c : m_coeffs.asSet()) {
             c.m_multiplier *= num;
         }
         m_multiplier /= num;
+    }
+
+    if (DEBUG_MODE) {
+        std::cout << " -> " << *this << std::endl;
     }
 
     return *this;
@@ -819,7 +846,12 @@ typename Coeff<Number>::String Coeff<Number>::toString(int type) const {
         out.append(ss.str()).append(m_variable);
 
         if (!m_coeffs.asSet().empty()) {
-            out.append("(");
+            if (m_coeffs.asSet().size() > 1 ||
+                    m_coeffs.asSet().begin()->m_multiplier < Number(0) ||
+                    (type & PAR_OMIT) == 0) {
+                out.append("(");
+            }
+
             if (type & WIDE) {
                 out.append(" ");
             }
@@ -834,7 +866,12 @@ typename Coeff<Number>::String Coeff<Number>::toString(int type) const {
                     out.append(" ");
                 }
             }
-            out.append(")");
+
+            if (m_coeffs.asSet().size() > 1 ||
+                m_coeffs.asSet().begin()->m_multiplier < Number(0) ||
+                (type & PAR_OMIT) == 0) {
+                out.append(")");
+            }
         }
     }
 

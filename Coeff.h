@@ -10,7 +10,7 @@
 #include <set>
 #include <map>
 
-#define DEBUG_MODE true
+#define DEBUG_MODE false
 
 /** declaration begin **/
 template<typename Number>
@@ -55,7 +55,7 @@ public:
     };
 
     /* DISPLAY PARAMS */
-    enum { FULL = 1, TIGHT = 2, WIDE = 4, BIN_MINUS = 8 };
+    enum { FULL = 1, TIGHT = 2, WIDE = 4, BIN_MINUS = 8, PAR_OMIT = 16 };
 
 private:
 

@@ -8,7 +8,7 @@
 #include <vector>
 #include "Coeff.h"
 
-#define DEBUG_MODE true
+#define DEBUG_MODE false
 
 /** declaration begin **/
 template<typename Number>

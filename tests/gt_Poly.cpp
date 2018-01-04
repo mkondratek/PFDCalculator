@@ -210,36 +210,36 @@ TEST_F(gt_Poly, op_plus_1) {
     }
 
     Pi b(Pi::Cff("c"));
-//    for (int i = 0; i < 10; ++i) {
-//        b += Pi(Pi::Cff(i*i, "a"), 2*i);
-//    }
-//
-//    for (int i = 0; i < 6; ++i) {
-//        b -= Pi(Pi::Cff(-i, "b"), i);
-//    }
+    for (int i = 0; i < 10; ++i) {
+        b += Pi(Pi::Cff(i*i, "a"), 2*i);
+    }
 
-    ASSERT_EQ(a.toString(), "x^9+x^8+x^7+x^6");
-    ASSERT_EQ(b.toString(), "81x^18+64x^16+49x^14+36x^12+25x^10+16x^8+9x^6+4x^5+7x^4+2x^3+2x^2-1");
+    for (int i = 0; i < 6; ++i) {
+        b -= Pi(Pi::Cff(-i, "b"), i);
+    }
+
+    ASSERT_EQ(a.toString(), "ax^9+ax^8+ax^7+ax^6+(a-b)x^5+(a-b)x^4+(a-b)x^3+(a-b)x^2+(a-b)x+(a-b)");
+    ASSERT_EQ(b.toString(), "81ax^18+64ax^16+49ax^14+36ax^12+25ax^10+16ax^8+9ax^6+5bx^5+(4a+4b)x^4+3bx^3+(a+2b)x^2+bx+c");
 }
 
-//TEST_F(gt_Poly, op_mul_0) {
-//    Pi a(1);
-//
-//    for (int i = 0; i < 5; ++i) {
-//        a *= Pi(Pi::Numvec{-1, 1});
-//    }
-//
-//    ASSERT_EQ(a.toString(), "x^10-5x^8+10x^6-10x^4+5x^2-1");
-//}
-//
-//TEST_F(gt_Poly, op_mul_1) {
-//    Pi a(1);
-//
-//    for (int i = 0; i < 5; ++i) {
-//        a *= Pi(Pi::Cffvec{Pi::Cff::parse("-a"), Pi::Cff::parse("b")});
-//    }
-//
-//    ASSERT_EQ(a.toString(), "x^10-5x^8+10x^6-10x^4+5x^2-1");
-//}
+TEST_F(gt_Poly, op_mul_0) {
+    Pi a(1);
+
+    for (int i = 0; i < 5; ++i) {
+        a *= Pi(Pi::Numvec{-1, 1});
+    }
+
+    ASSERT_EQ(a.toString(), "x^10-5x^8+10x^6-10x^4+5x^2-1");
+}
+
+TEST_F(gt_Poly, op_mul_1) {
+    Pi a(1);
+
+    for (int i = 0; i < 2; ++i) {
+        a *= Pi(Pi::Cffvec{Pi::Cff::parse("-a"), Pi::Cff::parse("b")});
+    }
+
+    ASSERT_EQ(a.toString(), "x^10-5x^8+10x^6-10x^4+5x^2-1");
+}
 
 #endif //PFDCALCULATOR_GT_COEFF_H
