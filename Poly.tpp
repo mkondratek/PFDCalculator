@@ -16,9 +16,56 @@ Poly<Number> &Poly<Number>::updateRoots() {
 }
 
 template<typename Number>
-Poly<Number> Poly<Number>::parse(Poly::String const& str) {
-    //todo find roots
-    return Poly();
+Poly<Number> Poly<Number>::parse(String str) {
+    Poly result;
+
+    if (str == "") {
+        str = "0";
+    }
+
+    const String split_points = "-+";
+
+    unsigned long int u_beg = 0;
+    unsigned long int u_end = 0;
+
+    u_end = str.find('^');
+    u_end = (u_end == String::npos ? str.length() : u_end);
+
+    while (u_beg != str.length()) {
+        if (u_end != str.length()) {
+            std::cout << "tu\n";
+            unsigned long int exp_end = u_end;
+
+            while (exp_end < str.length() && split_points.find(str[exp_end]) == String::npos) {
+                ++exp_end;
+            }
+
+            result += Poly(Cff::parse(str.substr(u_beg, u_end - u_beg)), Cff::toNum(str.substr(u_end + 1, exp_end - u_end - 1)));
+            u_end = exp_end;
+        }
+        else {
+            std::cout << "jednak tu ";
+            bool found_x = (str.find('x', u_end) != String::npos);
+            u_end = (!found_x ? str.length() : u_end);
+
+            if (found_x && str.find_first_of(split_points, u_beg) != String::npos) {
+                u_end = str.find_first_of(split_points, u_beg);
+            }
+            std::cout << u_beg << " " << u_end << " | ";
+
+            std::cout << "to Cff::parse: " << str.substr(u_beg, u_end - u_beg ) << std::endl;
+            result += Poly(Cff::parse(str.substr(u_beg, u_end - u_beg)), found_x);
+        }
+
+        u_beg = u_end;
+        u_end = str.find('^', u_end);
+        u_end = (u_end == String::npos ? str.length() : u_end);
+        std::cout << "b: " << u_beg << " e: " << u_end << " / " << str.length() << std::endl;
+    }
+
+    result.updateRoots();
+
+    return result;
 }
 
 template<typename Number>
@@ -137,8 +184,7 @@ Poly<Number> operator+(Poly<Number> const &a, Poly<Number> const &b) {
         result.m_monomials[i] += b.m_monomials[i];
     }
 
-    result.m_roots_valid = false;
-    //todo be able to remove line above
+    result.updateRoots();
 
     if (DEBUG_MODE) {
         std::cout << "  -> " << result << std::endl;
@@ -173,7 +219,7 @@ Poly<Number> operator*(Poly<Number> const &a, Poly<Number> const &b) {
         }
         result.m_roots_valid = true;
     } else {
-        //todo have roots here
+        result.updateRoots();
     }
 
     std::sort(result.m_roots.begin(), result.m_roots.end());
@@ -241,7 +287,7 @@ Poly<Number> &Poly<Number>::apply(typename Coeff<Number>::String const& variable
         c.apply(variable, value);
     }
 
-    //todo check roots
+    updateRoots();
     return *this;
 }
 

@@ -53,7 +53,7 @@ private:
 
 public:
 
-    static Poly parse(String const& str);
+    static Poly parse(String str);
 
     Poly() noexcept;
 

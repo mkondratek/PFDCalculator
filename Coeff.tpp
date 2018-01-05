@@ -142,6 +142,18 @@ Coeff<Number>& Coeff<Number>::fix() {
 }
 
 template<typename Number>
+Number Coeff<Number>::toNum(String str) {
+    Number tmp = Number(0);
+
+    if (str == "") { str = "0"; }
+
+    std::stringstream ss(str);
+    ss >> tmp;
+
+    return tmp;
+}
+
+template<typename Number>
 Coeff<Number> Coeff<Number>::parse(String str) {
     const String split_points = "-+";
 
@@ -212,29 +224,14 @@ Coeff<Number> Coeff<Number>::parse(String str) {
         if (DEBUG_MODE) {
             std::cout << " -> \"" << s << "\" )\n";
         }
-
-        if (std::is_same<Number, int>::value) {
-            return Coeff<Number>(std::stoi(s.substr(0, i)), s.substr(i));
-        } else if (std::is_same<Number, long int>::value) {
-            return Coeff<Number>(std::stol(s.substr(0, i)), s.substr(i));
-        } else if (std::is_same<Number, long long int>::value) {
-            return Coeff<Number>(std::stoll(s.substr(0, i)), s.substr(i));
-        } else if (std::is_same<Number, float>::value) {
-            return Coeff<Number>(std::stof(s.substr(0, i)), s.substr(i));
-        } else if (std::is_same<Number, double>::value) {
-            return Coeff<Number>(std::stod(s.substr(0, i)), s.substr(i));
-        } else if (std::is_same<Number, long double>::value) {
-            return Coeff<Number>(std::stold(s.substr(0, i)), s.substr(i));
-        } else {
-            return Coeff<Number>(1, s);
-        }
+        
+        return Coeff<Number>(toNum(s.substr(0, i)), s.substr(i));
     };
 
     unsigned long int u_beg = 0;
     unsigned long int u_end = 0;
 
     u_end = str.find('(');
-
     u_end = (u_end == String::npos ? str.length() : u_end);
 
     result = simpleParse(str.substr(0, u_end));

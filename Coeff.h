@@ -69,6 +69,7 @@ private:
     Coeff<Number>& fix(); //removes 0s
 
 public:
+    static Number toNum(String str);
 
     static Coeff<Number> parse(String str);
     static Coeff<Number> getRandom(unsigned long int seed = 1);

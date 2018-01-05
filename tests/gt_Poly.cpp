@@ -239,7 +239,45 @@ TEST_F(gt_Poly, op_mul_1) {
         a *= Pi(Pi::Cffvec{Pi::Cff::parse("-a"), Pi::Cff::parse("b")});
     }
 
-    ASSERT_EQ(a.toString(), "x^10-5x^8+10x^6-10x^4+5x^2-1");
+    ASSERT_EQ(a.toString(), "x^4+(2a-2b)x^3+(((a(a-2b)+b(b))+a(-b))+a(-b))x^2-a(a(2b)-b(2b))x+a(a(b(b)))");
 }
+
+TEST_F(gt_Poly, parse_0) {
+    Pi a = Pi::parse("");
+    Pi b = Pi::parse("0");
+    Pi c = Pi::parse("x");
+    Pi d = Pi::parse("x^1");
+    Pi e = Pi::parse("x^0");
+
+    ASSERT_EQ(a.toString(), "0");
+    ASSERT_EQ(b.toString(), "0");
+    ASSERT_EQ(c.toString(), "x");
+    ASSERT_EQ(d.toString(), "x");
+    ASSERT_EQ(e.toString(), "1");
+}
+
+//TEST_F(gt_Poly, parse_1) {
+//    Pi a = Pi::parse("00");
+//    Pi b = Pi::parse("0x+0");
+//    Pi c = Pi::parse("x+1");
+//    Pi d = Pi::parse("x^1+1");
+//    Pi e = Pi::parse("x+1x^0");
+//
+//    ASSERT_EQ(a.toString(), "0");
+//    ASSERT_EQ(b.toString(), "0");
+//    ASSERT_EQ(c.toString(), "x+1");
+//    ASSERT_EQ(d.toString(), "x+1");
+//    ASSERT_EQ(e.toString(), "x+1");
+//}
+//
+//TEST_F(gt_Poly, parse_2) {
+//    Pi a = Pi::parse("2x^2-3x-1");
+//    Pi b = Pi::parse("a");
+//    Pi c = Pi::parse("ax^2-bx+c");
+//
+//    ASSERT_EQ(a.toString(), "2x^2-3x-1");
+//    ASSERT_EQ(b.toString(), "a");
+//    ASSERT_EQ(c.toString(), "ax^2-bx+c");
+//}
 
 #endif //PFDCALCULATOR_GT_COEFF_H
