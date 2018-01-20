@@ -155,11 +155,15 @@ Number Coeff<Number>::toNum(String str) {
 
 template<typename Number>
 Coeff<Number> Coeff<Number>::parse(String str) {
+
+    Coeff<Number> result;
     const String split_points = "-+";
 
     if (DEBUG_MODE) {
         std::cout << "parse( \"" << str << "\"";
     }
+
+    str.erase(std::remove_if(str.begin(), str.end(), isblank), str.end());
 
     if (str == "") {
         str = "0";
@@ -177,6 +181,11 @@ Coeff<Number> Coeff<Number>::parse(String str) {
         }
     }
 
+    if (deep != 0) {
+        result = Coeff();
+        throw std::logic_error("parsing error: Unable to parse \"" + str + "\"\n");
+    }
+
     if (needsParentheses) {
         str = "(" + str + ")";
     }
@@ -184,8 +193,6 @@ Coeff<Number> Coeff<Number>::parse(String str) {
     if (DEBUG_MODE) {
         std::cout << " -> \"" << str << "\" )\n";
     }
-
-    Coeff<Number> result;
 
     auto simpleParse = [](String s) -> Coeff<Number> {
         if (DEBUG_MODE) {
@@ -242,7 +249,7 @@ Coeff<Number> Coeff<Number>::parse(String str) {
     }
 
     u_beg = u_end + 1;
-    for (unsigned long int i = u_beg; i < str.length() - 1; ++i) {
+    for (unsigned long int i = u_beg; i < str.length() - 1; ++i) {//todo remove - 1
         u_end = i;
 
         deep = 0;
@@ -253,6 +260,11 @@ Coeff<Number> Coeff<Number>::parse(String str) {
             deep -= (str[u_end] == ')');
 
             u_end++;
+        }
+
+        if (deep != 0) {
+            result = Coeff();
+            throw std::logic_error("parsing error: Unable to parse \"" + str + "\"\n");
         }
 
         if (DEBUG_MODE) {
@@ -616,10 +628,10 @@ Coeff<Number> operator*(Coeff<Number> const& a, Coeff<Number> const& b) {
     return result;
 }
 
-//template<typename Number>
-//Coeff<Number> operator/(const Coeff<Number>& a, const Coeff<Number>& b) {
-//    return Coeff<Number>();
-//}
+template<typename Number>
+Coeff<Number> operator/(const Coeff<Number>& a, const Coeff<Number>& b) {
+    return Coeff<Number>(a.calculate() / b.calculate());
+}
 
 template<typename Number>
 Coeff<Number>& Coeff<Number>::operator+=(Coeff<Number> const& a) {
@@ -639,10 +651,11 @@ Coeff<Number>& Coeff<Number>::operator*=(Coeff<Number> const& a) {
     return *this;
 }
 
-//template <typename Number>
-//Coeff<Number>& Coeff<Number>::operator/=(const Coeff<Number>& a) {
-//    return Coeff<Number>(*this);
-//}
+template <typename Number>
+Coeff<Number>& Coeff<Number>::operator/=(const Coeff<Number>& a) {
+    *this = *this / a;
+    return *this;
+}
 
 template<typename Number>
 Coeff<Number> Coeff<Number>::operator+() const {
@@ -880,6 +893,11 @@ typename Coeff<Number>::String Coeff<Number>::toString(int type) const {
     }
 
     return out;
+}
+
+template <typename Number>
+void Coeff<Number>::setDispT(int type) const {
+    display_t = type;
 }
 
 template<typename Number>

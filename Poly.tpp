@@ -12,6 +12,7 @@ Poly<Number> &Poly<Number>::updateRoots() {
     m_roots.clear();
     m_roots_valid = false;
 
+    std::sort(m_roots.begin(), m_roots.end());
     return *this;
 }
 
@@ -19,51 +20,68 @@ template<typename Number>
 Poly<Number> Poly<Number>::parse(String str) {
     Poly result;
 
-    if (str == "") {
-        str = "0";
-    }
+    if (str == "") { str = "0"; }
+
+    str.erase(std::remove_if(str.begin(), str.end(), isblank), str.end());
 
     const String split_points = "-+";
-
     unsigned long int u_beg = 0;
     unsigned long int u_end = 0;
 
-    u_end = str.find('^');
-    u_end = (u_end == String::npos ? str.length() : u_end);
+    while (u_beg < str.length()) {
 
-    while (u_beg != str.length()) {
-        if (u_end != str.length()) {
-            std::cout << "tu\n";
-            unsigned long int exp_end = u_end;
+        if (str[u_end] == '(') {
+            int deep = 0;
 
-            while (exp_end < str.length() && split_points.find(str[exp_end]) == String::npos) {
-                ++exp_end;
+            while (u_end < str.length() && (deep != 1 || str[u_end] != ')')) {
+                deep += (str[u_end] == '(');
+                deep -= (str[u_end] == ')');
+
+                u_end++;
             }
 
-            result += Poly(Cff::parse(str.substr(u_beg, u_end - u_beg)), Cff::toNum(str.substr(u_end + 1, exp_end - u_end - 1)));
-            u_end = exp_end;
-        }
-        else {
-            std::cout << "jednak tu ";
-            bool found_x = (str.find('x', u_end) != String::npos);
-            u_end = (!found_x ? str.length() : u_end);
-
-            if (found_x && str.find_first_of(split_points, u_beg) != String::npos) {
-                u_end = str.find_first_of(split_points, u_beg);
+            if (deep != 1 || str[u_end] != ')') {
+                result = Poly();
+                throw std::logic_error("parsing: Unable to parse \"" + str + "\"\n");
             }
-            std::cout << u_beg << " " << u_end << " | ";
 
-            std::cout << "to Cff::parse: " << str.substr(u_beg, u_end - u_beg ) << std::endl;
-            result += Poly(Cff::parse(str.substr(u_beg, u_end - u_beg)), found_x);
+            u_end++;
         }
 
-        u_beg = u_end;
-        u_end = str.find('^', u_end);
-        u_end = (u_end == String::npos ? str.length() : u_end);
-        std::cout << "b: " << u_beg << " e: " << u_end << " / " << str.length() << std::endl;
+        String to_parse = str.substr(u_beg, u_end - u_beg);
+
+        if (u_end < str.length() && str[u_end] == 'x') {
+            if (to_parse == "") { to_parse = "1"; }
+
+            if (u_end < str.length() && str[u_end + 1] == '^') {
+                unsigned long int exp_end = u_end + 3;
+                while (exp_end < str.length() && split_points.find(str[exp_end]) == String::npos) {
+                    ++exp_end;
+                }
+
+                result += Poly(Cff::parse(to_parse), Cff::toNum(str.substr(u_end + 2, exp_end - u_end - 2)));
+                u_beg = exp_end;
+
+            } else {
+                result += Poly(Cff::parse(to_parse), 1);
+                u_beg = u_end + 1;
+            }
+
+        } else if (u_beg != u_end && u_end < str.length() && split_points.find(str[u_end]) != String::npos) {
+            result += Poly(Cff::parse(to_parse), 0);
+            u_beg = u_end;
+
+        } else if (u_end >= str.length()) {
+            to_parse = str.substr(u_beg);
+            result += Poly(Cff::parse(to_parse), 0);
+            u_beg = str.length();
+        }
+
+        u_end++;
     }
 
     result.updateRoots();
+    std::sort(result.m_roots.begin(), result.m_roots.end());
 
     return result;
 }
@@ -89,7 +107,7 @@ Poly<Number>::Poly(Number const& number, unsigned int exp) noexcept {
 
 template<typename Number>
 Poly<Number>::Poly(Poly<Number>::Cff const& cff, unsigned int exp) noexcept {
-    if (!cff.ready() || cff.getMulti() != Number(0)) {
+    if (!cff.ready() || cff.calculate() != Number(0)) {
         m_monomials.resize(exp + 1, Cff(Number(0)));
         m_monomials[exp] = cff;
         if (cff.ready()) {
@@ -185,6 +203,7 @@ Poly<Number> operator+(Poly<Number> const &a, Poly<Number> const &b) {
     }
 
     result.updateRoots();
+    std::sort(result.m_roots.begin(), result.m_roots.end());
 
     if (DEBUG_MODE) {
         std::cout << "  -> " << result << std::endl;
@@ -272,6 +291,28 @@ Poly<Number> Poly<Number>::operator-() const {
 }
 
 template<typename Number>
+std::pair<Poly<Number>, Poly<Number>> Poly<Number>::divBy(Poly<Number> a) const {
+    if (!ready()) {
+        throw std::logic_error("dividing error: Polynomial is not ready");
+    } else if (a.getDegree() == 0 && a.m_monomials[0] == Number(0)) {
+        throw std::logic_error("dividing error: Divisor is equal to zero");
+    }
+
+    auto result = std::make_pair(Poly<Number>(), Poly<Number>(*this));
+
+    while (result.second.getDegree() == 0 && result.second.m_monomials[0] == Number(0)
+            && result.second.getDegree() >= a.getDegree()) {
+        auto cff = result.second.getCoeff(result.second.getDegree());
+        cff /= a.getCoeff(a.getDegree());
+        auto poly = Poly(cff, result.second.getDegree() - a.getDegree());
+        result.first += poly;
+        result.second -= poly * a;
+    }
+
+    return result;
+};
+
+template<typename Number>
 typename Poly<Number>::Cffvec Poly<Number>::getCoeffs() const {
     return m_monomials;
 }
@@ -288,6 +329,8 @@ Poly<Number> &Poly<Number>::apply(typename Coeff<Number>::String const& variable
     }
 
     updateRoots();
+    std::sort(m_roots.begin(), m_roots.end());
+
     return *this;
 }
 
@@ -298,6 +341,14 @@ Poly<Number> &Poly<Number>::apply(typename Coeff<Number>::MapOfV const& values) 
     }
 
     return *this;
+}
+
+template<typename Number>
+bool Poly<Number>::ready() const {
+    for (auto const & c : m_monomials) {
+        if (!c.ready()) { return false; }
+    }
+    return true;
 }
 
 template<typename Number>
@@ -333,27 +384,20 @@ typename Poly<Number>::String Poly<Number>::toString(int type) const {
     String str = "";
 
     if (type & int(ROOTS)) {
-        unsigned int multiplicity = 0;
+        unsigned int multiplicity = 1;
+        unsigned int beg = (type & int(ASC) ? 0 : m_roots.size() - 1);
+        unsigned int end = (type & int(ASC) ? m_roots.size() - 1 : 0);
 
-        for (unsigned int j = 0; j < getDegree() + 1; ++j) {
-            unsigned int i = (type & int(ASC) ? 0 : getDegree() - j);
+        for (unsigned int j = 0; j < m_roots.size(); ++j) {
+            unsigned int i = (type & int(ASC) ? j : m_roots.size() - j - 1);
+            if (i == end || m_roots[i] != m_roots[i + (type & int(ASC) ? 1 : -1)]) {
 
-            if (i == 0 || m_roots[i] != m_roots[i - 1]) {
-                if (multiplicity > (1 - ((type & int(Cff::FULL)) == int(Cff::FULL)))) {
-                    std::stringstream ss;
-                    ss << (type & int(Cff::WIDE) ? " " : "") << "^"
-                       << (type & int(Cff::WIDE) ? " " : "") << multiplicity << " ";
-
-                    str.append(ss.str());
-                }
-
-                multiplicity = 0;
                 if (m_roots[i] != Number(0)) {
                     if (type & int(Cff::WIDE)) {
-                        str.append("( x " + std::to_string(m_roots[i]) + " )");
+                        str.append("( x " + Cff(m_roots[i]).toString() + " )");
                     } else {
                         str.append("(x");
-                        str.append((m_roots[i] > 0 ? "+" : "") + std::to_string(m_roots[i]) + ")");
+                        str.append((m_roots[i] > 0 ? "+" : "") + Cff(m_roots[i]).toString() + ")");
                     }
                 } else {
                     if (type & int(Cff::FULL)) {
@@ -366,6 +410,18 @@ typename Poly<Number>::String Poly<Number>::toString(int type) const {
                         str.append("x");
                     }
                 }
+
+                if (multiplicity > (1 - ((type & int(Cff::FULL)) == int(Cff::FULL)))) {
+                    std::stringstream ss;
+                    ss << (type & int(Cff::WIDE) ? " " : "") << "^"
+                       << (type & int(Cff::WIDE) ? " " : "") << multiplicity;
+
+                    str.append(ss.str());
+                }
+
+                if (i != end) { str.append(" "); }
+
+                multiplicity = 1;
             } else {
                 multiplicity++;
             }
@@ -412,6 +468,11 @@ typename Poly<Number>::String Poly<Number>::toString(int type) const {
     }
 
     return str;
+}
+
+template<typename Number>
+void Poly<Number>::setDispT(int type) const {
+    display_t = type;
 }
 
 template <typename Number>

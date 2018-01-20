@@ -7,11 +7,8 @@
 
 /*
  * todo list
- * poly of roots vector
  * SOLEVer system of linear equation
  * roots finder (?)
- * throwing exception (and test it)
- * parsing error
  * fast polynomial multiplication
  * set tostring type in cff and poly
  * complex (?)

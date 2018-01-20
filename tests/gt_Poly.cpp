@@ -124,6 +124,7 @@ TEST_F(gt_Poly, cstr_roots_0) {
     ASSERT_EQ(a.toString(), "x-10");
     ASSERT_EQ(b.toString(), "x+7");
     ASSERT_EQ(c.toString(), "x^7-3x^6-x^5+11x^4-12x^3+4x^2");
+    ASSERT_EQ(c.toString(Pi::ROOTS), "(x+2) (x+1)^3 x^2 (x-2)");
     ASSERT_EQ(d.toString(), "0");
 }
 
@@ -256,28 +257,47 @@ TEST_F(gt_Poly, parse_0) {
     ASSERT_EQ(e.toString(), "1");
 }
 
-//TEST_F(gt_Poly, parse_1) {
-//    Pi a = Pi::parse("00");
-//    Pi b = Pi::parse("0x+0");
-//    Pi c = Pi::parse("x+1");
-//    Pi d = Pi::parse("x^1+1");
-//    Pi e = Pi::parse("x+1x^0");
-//
-//    ASSERT_EQ(a.toString(), "0");
-//    ASSERT_EQ(b.toString(), "0");
-//    ASSERT_EQ(c.toString(), "x+1");
-//    ASSERT_EQ(d.toString(), "x+1");
-//    ASSERT_EQ(e.toString(), "x+1");
-//}
-//
-//TEST_F(gt_Poly, parse_2) {
-//    Pi a = Pi::parse("2x^2-3x-1");
-//    Pi b = Pi::parse("a");
-//    Pi c = Pi::parse("ax^2-bx+c");
-//
-//    ASSERT_EQ(a.toString(), "2x^2-3x-1");
-//    ASSERT_EQ(b.toString(), "a");
-//    ASSERT_EQ(c.toString(), "ax^2-bx+c");
-//}
+TEST_F(gt_Poly, parse_1) {
+    Pi a = Pi::parse("00");
+    Pi b = Pi::parse("0x+0");
+    Pi c = Pi::parse("x+1");
+    Pi d = Pi::parse("x^1+1");
+    Pi e = Pi::parse("x+1x^0");
+
+    ASSERT_EQ(a.toString(), "0");
+    ASSERT_EQ(b.toString(), "0");
+    ASSERT_EQ(c.toString(), "x+1");
+    ASSERT_EQ(d.toString(), "x+1");
+    ASSERT_EQ(e.toString(), "x+1");
+}
+
+TEST_F(gt_Poly, parse_2) {
+    Pi a = Pi::parse("2x^2-3x-1");
+    Pi b = Pi::parse("a");
+    Pi c = Pi::parse("ax^2-bx+c");
+
+    ASSERT_EQ(a.toString(), "2x^2-3x-1");
+    ASSERT_EQ(b.toString(), "a");
+    ASSERT_EQ(c.toString(), "ax^2-bx+c");
+}
+
+TEST_F(gt_Poly, parse_3) {
+    Pi a = Pi::parse("1+x+x^1+x+x^0+x^0");
+    Pi b = Pi::parse("ax+ax+ax+ax");
+    Pi c = Pi::parse("(a+b)x^2+(a-b)x^2");
+
+    ASSERT_EQ(a.toString(), "3x+3");
+    ASSERT_EQ(b.toString(), "4ax");
+    ASSERT_EQ(c.toString(), "2ax^2");
+}
+
+TEST_F(gt_Poly, except) {
+    ASSERT_ANY_THROW(Pi::parse("a+b)"));
+    ASSERT_ANY_THROW(Pi::parse("a+b)x"));
+    ASSERT_ANY_THROW(Pi::parse("a+b)x^2"));
+    ASSERT_ANY_THROW(Pi::parse("a+b)x^1"));
+    ASSERT_ANY_THROW(Pi::parse("a+b)x^0"));
+    ASSERT_ANY_THROW(Pi::parse("(a+b))x^12"));
+}
 
 #endif //PFDCALCULATOR_GT_COEFF_H

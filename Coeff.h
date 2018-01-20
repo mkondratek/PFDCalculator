@@ -5,6 +5,7 @@
 #ifndef PFDCALCULATOR_COEFF_H
 #define PFDCALCULATOR_COEFF_H
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <set>
@@ -26,8 +27,8 @@ template<typename Number>
 Coeff<Number> operator-(Coeff<Number> const& a, Coeff<Number> const& b);
 template<typename Number>
 Coeff<Number> operator*(Coeff<Number> const& a, Coeff<Number> const& b);
-//template<typename Number>
-//Coeff<Number> operator/(Coeff<Number> const& a, Coeff<Number> const& b);
+template<typename Number>
+Coeff<Number> operator/(Coeff<Number> const& a, Coeff<Number> const& b);
 /**  declaration end  **/
 
 template<typename Number>
@@ -97,12 +98,12 @@ public:
     friend Coeff<Number> operator+<Number>(Coeff<Number> const& a, Coeff<Number> const& b);
     friend Coeff<Number> operator-<Number>(Coeff<Number> const& a, Coeff<Number> const& b);
     friend Coeff<Number> operator*<Number>(Coeff<Number> const& a, Coeff<Number> const& b);
-//    friend Coeff<Number> operator/<Number>(Coeff<Number> const& a, Coeff<Number> const& b);
+    friend Coeff<Number> operator/<Number>(Coeff<Number> const& a, Coeff<Number> const& b);
 
     Coeff<Number>& operator+=(Coeff<Number> const& a);
     Coeff<Number>& operator-=(Coeff<Number> const& a);
     Coeff<Number>& operator*=(Coeff<Number> const& a);
-//    Coeff<Number>& operator/=(Coeff<Number> const& a);
+    Coeff<Number>& operator/=(Coeff<Number> const& a);
 
     Coeff<Number> operator+() const;
     Coeff<Number> operator-() const;
@@ -127,6 +128,7 @@ public:
     SetOfV getAllVars() const;
 
     String toString(int type = display_t) const;
+    void setDispT(int type) const;
 
     friend std::ostream& operator<<<Number>(std::ostream& stream, Coeff<Number> const& coeff);
     friend std::istream& operator>><Number>(std::istream& stream, Coeff<Number>& coeff);

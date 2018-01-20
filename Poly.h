@@ -82,11 +82,15 @@ public:
     Poly<Number> operator+() const;
     Poly<Number> operator-() const;
 
+    std::pair<Poly<Number>, Poly<Number>> divBy(Poly<Number> a) const;
+
     Cffvec getCoeffs() const;
     Numvec getRoots() const;
 
     Poly<Number>& apply(typename Cff::String const& variable, Number const& value);
     Poly<Number>& apply(typename Cff::MapOfV const& values);
+
+    bool ready() const;
 
     Number calculate(Number const& number) const;
     Number calculate(Number const& number, typename Cff::MapOfV const& values) const;
@@ -96,6 +100,7 @@ public:
     unsigned int getDegree() const;
 
     String toString(int type = display_t) const;
+    void setDispT(int type) const;
 
     friend std::ostream& operator<< <Number>(std::ostream& stream, Poly<Number> const& poly);
     friend std::istream& operator>> <Number>(std::istream& stream, Poly<Number>& poly);
